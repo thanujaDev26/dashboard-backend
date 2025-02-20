@@ -10,7 +10,7 @@ router.post('/refresh-token', AdminController.getToken);
 
 
 router.get('/profile', authMiddleware, (req, res) => {
-    res.json({ message: 'This is a protected route', user: req.user });
+    res.json({ message: 'This is a protected route', user: req.user.id });
 });
 
 module.exports = router;

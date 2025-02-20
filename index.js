@@ -10,7 +10,6 @@ const AdminRouter = require('./Routes/AdminRoutes')
 const GreetingRouter = require('./Routes/GreetingRoutes')
 
 
-
 app.use('/api/v1', AdminRouter);
 app.use('/api/v1', GreetingRouter);
 
