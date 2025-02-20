@@ -1,98 +1,93 @@
-const Admin = require('../Modals/AdminModal')
+const Admin = require('../Modals/AdminModal');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
-let refreshTokens=[];
+let refreshTokens = [];
 
-exports.signUpUser = async (request, response) => {
+exports.signUpUser = async (req, res) => {
     try {
-        const signUpUser = await Admin.create(request.body);
-        if (!signUpUser) {
-            return response.status(400).send({
-                status: 'error',
-                message: 'Null users are not allowed'
-            });
+        const hashedPassword = await bcrypt.hash(req.body.password, 10);
+        req.body.password = hashedPassword;
+
+        const newUser = await Admin.create(req.body);
+        if (!newUser) {
+            return res.status(400).json({ status: 'error', message: 'Null users are not allowed' });
         }
-        return response.status(200).send({
-            status: 'success',
-            message: 'Successfully registered',
-            user: signUpUser
-        });
+
+        res.status(201).json({ status: 'success', message: 'Successfully registered', user: newUser });
     } catch (err) {
-        return response.status(400).send({
-            status: 'error',
-            message: err.message
-        });
+        res.status(500).json({ status: 'error', message: err.message });
     }
 };
 
-
-exports.signInUser = async (request, response) => {
+exports.signInUser = async (req, res) => {
     try {
-        const { email, password } = request.body;
-        const signInUser = await Admin.findOne({ email });
-        if (!signInUser) {
-            return response.status(400).send({
-                status: 'error',
-                message: 'Invalid email or password'
-            });
+        const { email, password } = req.body;
+        const user = await Admin.findOne({ email });
+
+        const role = user.role || "admin";
+
+        if(!user){
+            return res.status(400).json({ status: 'error', message: 'Invalid email' });
         }
 
-        const isMatch = await bcrypt.compare(password, signInUser.password);
-        if (!isMatch) {
-            return response.status(400).send({
-                status: 'error',
-                message: 'Invalid password'
-            });
+        if(!bcrypt.compare(password, user.password)){
+            return res.status(400).json({ status: 'error', message: 'Invalid password' });
         }
 
-        console.log(signInUser)
+        // if (!user || !(await bcrypt.compare(password, user.password))) {
+        //     return res.status(400).json({ status: 'error', message: 'Invalid email or password' });
+        // }
 
-        // const accessToken = jwt.sign({ id: signInUser._id, role: 'admin' }, process.env.JWT_SECRET, {expiresIn: '1h'});
-        // const refreshToken = jwt.sign({ id: signInUser._id, role: 'admin' }, process.env.RE_TOKEN_KEY, { expiresIn: '24h' });
+        const accessToken = jwt.sign(
+            { id: user._id, role: role },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+        const refreshToken = jwt.sign(
+            { id: user._id, role: role },
+            process.env.RE_TOKEN_KEY,
+            { expiresIn: '24h' }
+        );
 
-        // refreshTokens.push(refreshToken);
+        refreshTokens.push(refreshToken);
 
-        return response.status(200).send({
+        return res.status(200).json({
             status: 'success',
-            // user: {
-            //     id: signInUser._id,
-            //     email: signInUser.email,
-            //     role: signInUser.role,
-            //     accessToken: accessToken,
-            //     refreshToken: refreshToken
-            // }
-            user: signInUser
+            user: {
+                id: user._id,
+                email: user.email,
+                role: role,
+                accessToken,
+                refreshToken
+            }
         });
     } catch (err) {
-        return response.status(400).send({
-            status: 'error',
-            message: err.message
-        });
+        res.status(500).json({ status: 'error', message: err.message });
     }
 };
 
-exports.getToken = async (req,res)=>{
+exports.getToken = (req, res) => {
     const { refreshToken } = req.body;
-    if(refreshToken == null) {
-        return res.status(401).json({
-            message: 'Refresh token required'
-        });
-    }
-    if(!refreshTokens.includes(refreshToken)) {
-        return res.status(403).json({
-            message: 'Invalid refresh token'
-        });
-    }
-    jwt.verify(refreshToken,process.env.RE_TOKEN_KEY,(err,user)=>{
-        if(err) {
-            res.sendStatus(403);
-        }
-        const accessToken=jwt.sign({name:user.name},process.env.TOKEN_KEY,{expiresIn: '1h'});
-        res.json({
-            accessToken: accessToken
-        });
-    });
-}
 
+    if (!refreshToken) {
+        return res.status(401).json({ message: 'Refresh token required' });
+    }
+
+    if (!refreshTokens.includes(refreshToken)) {
+        return res.status(403).json({ message: 'Invalid refresh token' });
+    }
+
+    jwt.verify(refreshToken, process.env.RE_TOKEN_KEY, (err, user) => {
+        if (err) return res.sendStatus(403);
+
+        const newAccessToken = jwt.sign(
+            { id: user.id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        res.json({ accessToken: newAccessToken });
+    });
+};
