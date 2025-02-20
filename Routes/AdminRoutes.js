@@ -9,8 +9,8 @@ router.post('/sign-in', AdminController.signInUser);
 router.post('/refresh-token', AdminController.getToken);
 
 
-router.get('/profile', authMiddleware, (req, res) => {
-    res.json({ message: 'This is a protected route', user: req.user });
+router.get('/dashboard', authMiddleware, (req, res) => {
+    res.json({ message: 'This is a protected route', user: req.user.id });
 });
 
 module.exports = router;
