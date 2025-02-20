@@ -61,7 +61,7 @@ npm start
 |--------|-------------|------------------|
 | POST   | `/api/v1/sign-up` | Register new user |
 | POST   | `/api/v1/sign-in` | Login user & get tokens |
-| GET    | `/api/v1/profile` | Get user profile (Protected) |
+| GET    | `/api/v1/dashboard` | Get user profile (Protected) |
 | POST   | `/api/v1/refresh-token` | Generate new access token |
 
 ---
