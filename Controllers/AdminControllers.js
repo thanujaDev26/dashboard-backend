@@ -23,6 +23,7 @@ exports.signUpUser = async (request, response) => {
     }
 };
 
+
 exports.signInUser = async (request, response) => {
     const { email, password } = request.body;
     try {
@@ -53,4 +54,5 @@ exports.signInUser = async (request, response) => {
         });
     }
 };
+
 
