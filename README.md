@@ -83,6 +83,6 @@ This project is open-source under the MIT License.
 
 ## Author
 
-👨‍💻 **Your Name**  
+👨‍💻 **Thanuja Priyadarshane**  
 🚀 GitHub: (https://github.com/thanujaDev26/dashboard-backend)
 
